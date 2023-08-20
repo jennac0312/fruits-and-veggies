@@ -1,6 +1,7 @@
 const express = require("express")
 const app = express()
 const PORT = 3000
+const methodOverride = require("method-override")
 
 require('dotenv').config() // why?
 
@@ -21,14 +22,13 @@ app.engine("jsx", require("express-react-views").createEngine());
 // use json
 app.use(express.json())
 
+app.use( methodOverride("_method") )
+
 
 // app.use( , "epress-react-views")
 
 // view body of a post request
-// app.use(express.urlencoded({extended:false}));
-
-
-
+app.use(express.urlencoded({extended:false}));
 
 // ROUTES
 app.get('/', ( req, res ) => {
@@ -38,7 +38,7 @@ app.get('/', ( req, res ) => {
 
 // SHOW All
 app.get('/fruits', async( req, res ) => {
-    const fruits = await Fruit.find()
+    const fruits = await Fruit.find({})
     res.render('Show', { type: "fruits", foods: fruits })
 })
 app.get('/veggies', async ( req, res ) => {
@@ -55,23 +55,51 @@ app.get('/veggies/new', ( req, res ) => {
     res.render("New", { type: 'veggies' })
 })
 
-// POST TRY
-app.post('/fruits/new', async ( req, res ) => {
-    // res.send(req.body) //checking thunderclient
+app.post('/fruits', async ( req, res ) => {
+    const fruit =  req.body
+
     try {
-        const fruit = await Fruit.create( req.body )
-        res.status(200).json(fruit)       
+        if( fruit.readyToEat === "on" ){
+            fruit.readyToEat = true
+        } else {
+            fruit.readyToEat = false
+        }
+        await Fruit.create( fruit )
+        res.redirect('/fruits')
+        
     } catch (error) {
-        console.log(error.message)
-        res.status(500).json( { message: error.message })
+        res.status(500).send( error )
     }
+    
+
 })
 
-app.post('/veggies/new', async ( req, res ) => {
+// POST TRY
+// app.post('/fruits/new', async ( req, res ) => {
+//     // res.send(req.body) //checking thunderclient
+//     try {
+//         const fruit = await Fruit.create( req.body )
+//         res.status(200).json(fruit)       
+//     } catch (error) {
+//         console.log(error.message)
+//         res.status(500).json( { message: error.message })
+//     }
+// })
+
+app.post('/veggies', async ( req, res ) => {
     // res.send(req.body) // checking thunderclient
+    let veg = req.body
     try {
-        const veggie = await Veggie.create( req.body )
-        res.status(200).json(veggie)
+        if( veg.readyToEat === "on" ){
+            veg.readyToEat = true
+        } else {
+            veg.readyToEat = false
+        }
+
+        const veggie = await Veggie.create( veg )
+        // res.status(200).json(veggie)
+
+        res.redirect( '/veggies' )
     } catch (error) {
         console.log(error)
         res.status(500).json( { message: error.message })
@@ -79,35 +107,39 @@ app.post('/veggies/new', async ( req, res ) => {
 })
 
 // GET BY NAME
-app.get(`/fruits/:param`, async ( req, res ) => {
-    const { param } = req.params
-        const name = await Fruit.find({ name: param })
-        const id = await Fruit.find({ id: param })
+app.get(`/fruits/:id`, async ( req, res ) => {
+    let { id } = req.params
 
-        if(name){
-            // res.send('fruit exists')
-            res.send(`${name.length}`)
-            // res.send("namename" + name)
-            // res.render("Name", { food: name, type:'fruits' })
-        } else if(id) {
-            res.send("id")
-            // res.render("Index", { food: id, type:"fruits" })
-        } else {
-            res.send('cant find fruit')
-        }
+    try {
+        let fruit = await Fruit.findById( id )
+        res.render( "Index", { type: "fruits" ,food: fruit } )
+    } catch (error) {
+        res.status(500).send( error )
+    }
 
-    // try {
-    //     const fruit = await Fruit.find({ name: name })
-    //     res.render("Index", { food: fruit })
-        
-    // } catch (error) {
-    //     console.log(error)
-    //     res.status(500).json({ message: error.message })
-    // }
 })
 
-app.get('/veggies/:id', ( req, res ) => {
-    res.render("Index", { food: req.params.id})
+app.delete('/fruits/:id', async ( req, res ) => {
+    // res.send('...deleting')
+
+    let { id } = req.params
+
+    await Fruit.findByIdAndDelete( id )
+    res.redirect( '/fruits' )
+})
+
+app.get('/veggies/:id', async ( req, res ) => {
+    // res.render("Index", { food: req.params.id})
+
+    let { id } = req.params
+
+    try {
+        let veg = await Veggie.findById( id )
+        res.render( "Index", { food: veg, type: "veggies" } )
+        
+    } catch (error) {
+        res.status(500).send( error )
+    }
 })
 
 // CONNECT TO DATABASE
