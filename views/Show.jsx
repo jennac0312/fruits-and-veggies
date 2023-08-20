@@ -10,7 +10,9 @@ const Show = ( { type, foods } ) => {
         </h1>
         <a href={`/${type}/new`}>Add New { type.toUpperCase() }</a>
 
-            { foods.map((food, index) => {
+            { 
+            foods.length > 0 ?
+            foods.map((food, index) => {
                 return (
                     <>
                 <a href={`/${type}/${food._id}`} style={{ textDecoration: "none"}}>
@@ -28,7 +30,9 @@ const Show = ( { type, foods } ) => {
                 <hr />
                 </>
                 )
-            }) } 
+            }) :
+            <h1>Sorry no {type} to show </h1>
+        } 
     </div>
   )
 }

@@ -142,6 +142,17 @@ app.get('/veggies/:id', async ( req, res ) => {
     }
 })
 
+app.delete( '/veggies/:id', async ( req, res ) => {
+
+    let { id } = req.params
+    try {
+        await Veggie.findByIdAndDelete( id )
+        res.redirect( '/veggies' )
+    } catch (error) {
+        res.status(500).send( error )
+    }
+})
+
 // CONNECT TO DATABASE
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.connection.once('open', ()=> {
